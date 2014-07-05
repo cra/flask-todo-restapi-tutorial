@@ -1,7 +1,29 @@
 #!/bin/env python
 # coding: utf-8
 
+"""
+Basic flask REST API-app to, thanks to
+http://blog.miguelgrinberg.com/post/designing-a-restful-api-with-python-and-flask
+
+$ git clone (url) testflask
+$ cd testflask
+$ virtualenv .
+$ source ./bin/activate
+$ pip install flask
+$ pip install flash-httpauth
+$ chmod +x app.py
+$ ./app.py
+
+$ curl -u test:demo -i http://localhost:5000/api/v1.0/tasks/
+
+# or, using https://github.com/jakubroztocil/httpie
+$ http -a test:demo http://localhost:5000/api/v1.0/tasks/
+
+"""
+
+
 from flask import Flask, jsonify, abort, make_response, request, url_for
+from flask.ext.httpauth import HTTPBasicAuth
 
 
 app = Flask(__name__)
@@ -23,6 +45,21 @@ tasks = [
 ]
 
 
+auth = HTTPBasicAuth()
+
+
+@auth.get_password
+def get_password(username): # LOL
+    if username == "test":
+        return "demo"
+    return None
+
+
+@auth.error_handler
+def unauthorized():
+    return make_response(jsonify({'error': "Unathorized access"}), 401)
+
+
 def make_public_task(task):
     new_task = {}
     for field in task:
@@ -41,6 +78,7 @@ def not_found(error):
 
 
 @app.route('/api/v1.0/tasks/', methods=["GET", "POST"])
+@auth.login_required
 def tasks_index():
     if request.method == "GET":
         return jsonify({'tasks': map(make_public_task, tasks)})
@@ -58,6 +96,7 @@ def tasks_index():
 
 
 @app.route("/api/v1.0/tasks/<int:task_id>", methods=["GET", "PUT", "DELETE"])
+@auth.login_required
 def get_task(task_id):
     task = filter(lambda t: t['id'] == task_id, tasks)
     if len(task) == 0:

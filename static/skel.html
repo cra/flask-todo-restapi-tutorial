@@ -24,7 +24,7 @@
     <!-- ko foreach: tasks -->
     <tr>
       <td>
-        <span data-bind="visible: done" class="label label-success">Done</span>
+        <span data-bind="visible: done()" class="label label-success">Done</span>
         <span data-bind="visible: !done()" class="label label-important">In progress</span>
       </td>
       <td><p><b data-bind="text: title"></b></p><p data-bind="text: description"></p></td>
@@ -46,20 +46,28 @@
   <script type="text/javascript">
 function TasksViewModel() {
   var self = this;
+  self.tasksURI = 'http://localhost:5000/api/v1.0/tasks/';
+  self.username = "test"; self.password = "demo";
   self.tasks = ko.observableArray();
 
-  self.tasks([
-    {
-      title: ko.observable('title #1'),
-      description: ko.observable('description #1'),
-      done: ko.observable(false),
-    },
-    {
-      title: ko.observable('title #2'),
-      description: ko.observable('description #2'),
-      done: ko.observable(true),
-    },
-  ]);
+  self.ajax = function(uri, method, data) {
+    var request = {
+      url: uri,
+      type: method,
+      ContentType: "application/json",
+      accepts: "application/json",
+      cache: false,
+      dataType: 'json',
+      data: JSON.stringify(data),
+      beforeSend: function(xhr) {
+        xhr.setRequestHeader("Authorization", "Basic " + btoa(self.username + ":" + self.password));
+      },
+      error: function(jqXHR) {
+         console.log("ajax error " + jqXHR.status);
+      },
+    };
+    return $.ajax(request);
+  }
 
   self.beginAdd = function() { alert("Add"); }
   self.beginEdit = function(task) { alert("Edit: " + task.title()); }
@@ -72,6 +80,17 @@ function TasksViewModel() {
   self.markDone = function(task) {
     task.done(true);
   }
+
+  self.ajax(self.tasksURI, 'GET').done(function(data) {
+    for (var i = 0; i < data.tasks.length; i++) {
+      self.tasks.push({
+        uri: ko.observable(data.tasks[i].uri),
+        title: ko.observable(data.tasks[i].title),
+        description: ko.observable(data.tasks[i].description),
+        done: ko.observable(data.tasks[i].done),
+      });
+    }
+  });
 }
 
   ko.applyBindings(new TasksViewModel(), $('#main')[0]);

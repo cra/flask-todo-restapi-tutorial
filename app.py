@@ -26,7 +26,8 @@ from flask import Flask, jsonify, abort, make_response, request, url_for
 from flask.ext.httpauth import HTTPBasicAuth
 
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path="")
+auth = HTTPBasicAuth()
 
 
 tasks = [
@@ -43,9 +44,6 @@ tasks = [
         "done": False,
     },
 ]
-
-
-auth = HTTPBasicAuth()
 
 
 @auth.get_password

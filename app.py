@@ -57,9 +57,7 @@ def tasks_index():
         return jsonify({'task': task}), 201
 
 
-ACCESS_URL = "/api/v1.0/tasks/<int:task_id>"
-
-@app.route(ACCESS_URL, methods=["GET", "PUT", "DELETE"])
+@app.route("/api/v1.0/tasks/<int:task_id>", methods=["GET", "PUT", "DELETE"])
 def get_task(task_id):
     task = filter(lambda t: t['id'] == task_id, tasks)
     if len(task) == 0:

@@ -55,7 +55,8 @@ def get_password(username): # LOL
 
 @auth.error_handler
 def unauthorized():
-    return make_response(jsonify({'error': "Unathorized access"}), 401)
+    # Since we want to display our own login dialog, I return here 403 (not 401)
+    return make_response(jsonify({'error': "Unathorized access"}), 403)
 
 
 def make_public_task(task):

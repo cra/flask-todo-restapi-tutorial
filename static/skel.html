@@ -43,7 +43,33 @@
   </table>
   <button data-bind="click: beginAdd" class="btn">Add Task</button>
 </div>
-  <script type="text/javascript">
+<div id="add" class="modal hide fade" tabindex="=1" role="dialog" aria-labelledby="addDialogLabel" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="ture">x</button>
+    <h3 id="addDialogLabel">Add Task</h3>
+  </div>
+  <div class="modal-body">
+    <form class="form-horizontal">
+      <div class="control-group">
+        <label class="control-label" for="inputTask">Task</label>
+        <div class="controls">
+          <input data-bind="value: title" type="text" id="inputTask" placeholder="Task title" style="width: 150px;">
+        </div>
+      </div>
+      <div class="control-group">
+        <label class="control-label" for="inputDescription">Description</label>
+        <div class="controls">
+          <input data-bind="value: description" type="text" id="inputDescription" placeholder="Description" style="width: 300px;">
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button data-bind="click: addTask" class="btn btn-primary">Add Task</button>
+    <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+  </div>
+</div>
+<script type="text/javascript">
 function TasksViewModel() {
   var self = this;
   self.tasksURI = 'http://localhost:5000/api/v1.0/tasks/';
@@ -54,7 +80,7 @@ function TasksViewModel() {
     var request = {
       url: uri,
       type: method,
-      ContentType: "application/json",
+      contentType: "application/json",
       accepts: "application/json",
       cache: false,
       dataType: 'json',
@@ -69,7 +95,10 @@ function TasksViewModel() {
     return $.ajax(request);
   }
 
-  self.beginAdd = function() { alert("Add"); }
+  self.beginAdd = function() {
+    $('#add').modal('show');
+  }
+
   self.beginEdit = function(task) { alert("Edit: " + task.title()); }
   self.remove = function(task) { alert("Remove: " + task.title()); }
 
@@ -81,6 +110,7 @@ function TasksViewModel() {
     task.done(true);
   }
 
+  // There's only two arguments since it's a GET request
   self.ajax(self.tasksURI, 'GET').done(function(data) {
     for (var i = 0; i < data.tasks.length; i++) {
       self.tasks.push({
@@ -91,10 +121,41 @@ function TasksViewModel() {
       });
     }
   });
+
+  self.add = function(task) {
+    self.ajax(self.tasksURI, 'POST', task).done(function(data) {
+      self.tasks.push({
+        uri: ko.observable(data.task.uri),
+        title: ko.observable(data.task.title),
+        description: ko.observable(data.task.description),
+        done: ko.observable(data.task.done),
+      });
+    });
+  }
 }
 
-  ko.applyBindings(new TasksViewModel(), $('#main')[0]);
+function AddTaskViewModel() {
+  var self = this;
+  self.title = ko.observable();
+  self.description = ko.observable();
 
-  </script>
+  self.addTask = function() {
+    $('#add').modal('hide');
+    tasksViewModel.add({
+      title: self.title(),
+      description: self.description(),
+    });
+    /*self.title("");
+    self.description("");*/
+  }
+}
+
+var tasksViewModel = new TasksViewModel();
+var addTaskViewModel = new AddTaskViewModel();
+
+ko.applyBindings(tasksViewModel, $('#main')[0]);
+ko.applyBindings(addTaskViewModel, $('#add')[0]);
+
+</script>
 </body>
 </html>
